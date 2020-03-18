@@ -1,0 +1,37 @@
+{
+  "name": "cloud_platform_helper",
+  "version": "1.0.0",
+  "description": "A handful of cloud foundry API methods",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "build": "tsc",
+    "url": "git+https://github.com/marcellourbani/cloud_platform_helper.git"
+  },
+  "keywords": [
+    "SAP",
+    "cloud",
+    "platform"
+  ],
+  "author": "Marcello Urbani",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/marcellourbani/cloud_platform_helper/issues"
+  },
+  "homepage": "https://github.com/marcellourbani/cloud_platform_helper#readme",
+  "dependencies": {
+    "client-oauth2": "^4.2.5",
+    "express": "^4.17.1",
+    "got": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.3",
+    "@types/jest": "^25.1.4",
+    "jest": "^25.1.0",
+    "ts-jest": "^25.2.1",
+    "typescript": "^3.8.3"
+  }
+}
