@@ -35,6 +35,49 @@ export interface UaaTokenKeys {
 const isUaaTokenKeys = (x: UaaTokenKeys): x is UaaTokenKeys =>
   !!(x?.kid && x?.value && x?.alg && x?.kty)
 
+export interface CfEntity {}
+export interface CfMetadata {
+  created_at: string
+  guid: string
+  updated_at: string
+  url: string
+}
+export interface CfResource<T extends CfEntity> {
+  metadata: CfMetadata
+  entity: T
+}
+export interface CfResult<T extends CfEntity> {
+  total_results: number
+  total_pages: number
+  prev_url?: string | null
+  next_url?: string | null
+  resources: CfResource<T>[]
+}
+
+const isCfResult = <T extends CfEntity>(keyRes: any): keyRes is CfResult<T> =>
+  Array.isArray(keyRes?.resources) &&
+  (keyRes.total_results || keyRes.total_results === 0)
+export interface CfOrganizationEntity extends CfEntity {
+  app_events_url: string
+  auditors_url: string
+  billing_enabled: boolean
+  billing_managers_url: string
+  default_isolation_segment_guid?: string
+  domains_url: string
+  managers_url: string
+  name: string
+  private_domains_url: string
+  quota_definition_guid: string
+  quota_definition_url: string
+  space_quota_definitions_url: string
+  spaces_url: string
+  status: string
+  users_url: string
+}
+const isCfOrganizationEntity = (x: any): x is CfOrganizationEntity =>
+  !!(x?.spaces_url && x?.app_events_url && x?.auditors_url && x?.name)
+
+//////////////////////////////////////////////////////
 export async function cfInfo(cfEndPoint: string) {
   const headers = { Accept: "application/json" }
   const resp = await got(cfEndPoint, { headers })
@@ -51,6 +94,25 @@ export async function cfTokenKeys(uaaLoginEndPoint: string) {
   if (!Array.isArray(keys) || !keys.every(isUaaTokenKeys))
     throw new Error("Failed to retrieve token keys")
   return keys as UaaTokenKeys[]
+}
+
+export async function cfOrganizations(cfEndPoint: string, token: string) {
+  const headers = {
+    Authorization: `bearer ${token}`,
+    Accept: "application/json"
+  }
+  const searchParams = { "order-by": "name", "order-direction": "asc" }
+  const resp = await got(`${cfEndPoint}/v2/organizations`, {
+    headers,
+    searchParams
+  })
+  const orgRes = JSON.parse(resp.body)
+  if (
+    !isCfResult(orgRes) ||
+    !orgRes.resources.every(r => isCfOrganizationEntity(r.entity))
+  )
+    throw new Error("Unexpected response format for Organizations")
+  return orgRes.resources as CfResource<CfOrganizationEntity>[]
 }
 
 export function cfPasswordGrant(url: string, user: string, password: string) {
