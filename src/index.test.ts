@@ -1,5 +1,11 @@
 // all these tests use an actual CF account defined in setenv.js, will not run without valid credentials
-import { cfPasswordGrant, cfInfo, cfTokenKeys, cfOrganizations } from "."
+import {
+  cfPasswordGrant,
+  cfInfo,
+  cfTokenKeys,
+  cfOrganizations,
+  cfSpaces
+} from "."
 
 const getenv = () => {
   const { CFUSER, CFPASSWORD, CFENDPOINT } = process.env
@@ -50,4 +56,14 @@ test("Organizations", async () => {
   const organizations = await cfOrganizations(CFENDPOINT, token)
   expect(organizations.length).toBeTruthy()
   expect(organizations[0].entity.name).toBeDefined()
+})
+
+test("cf Spaces", async () => {
+  const { CFENDPOINT } = getenv()
+  const token = await getCfAccessToken()
+
+  const organizations = await cfOrganizations(CFENDPOINT, token)
+  const spaces = await cfSpaces(CFENDPOINT, organizations[0].entity, token)
+  expect(spaces.length).toBeTruthy()
+  expect(spaces[0].entity.name).toBeDefined()
 })

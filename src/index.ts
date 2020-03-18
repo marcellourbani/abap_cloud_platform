@@ -77,6 +77,33 @@ export interface CfOrganizationEntity extends CfEntity {
 const isCfOrganizationEntity = (x: any): x is CfOrganizationEntity =>
   !!(x?.spaces_url && x?.app_events_url && x?.auditors_url && x?.name)
 
+export interface CfSpaceEntity extends CfEntity {
+  allow_ssh: boolean
+  app_events_url: string
+  apps_url: string
+  auditors_url: string
+  developers_url: string
+  domains_url: string
+  events_url: string
+  name: string
+  isolation_segment_guid?: string
+  managers_url: string
+  organization_guid: string
+  organization_url: string
+  routes_url: string
+  security_groups_url: string
+  service_instances_url: string
+  space_quota_definition_guid?: string
+  staging_security_groups_url: string
+}
+const isCfSpaceEntity = (x: any): x is CfSpaceEntity =>
+  !!(
+    x?.service_instances_url &&
+    x?.app_events_url &&
+    x?.auditors_url &&
+    x?.name
+  )
+
 //////////////////////////////////////////////////////
 export async function cfInfo(cfEndPoint: string) {
   const headers = { Accept: "application/json" }
@@ -115,6 +142,28 @@ export async function cfOrganizations(cfEndPoint: string, token: string) {
   return orgRes.resources as CfResource<CfOrganizationEntity>[]
 }
 
+export async function cfSpaces(
+  cfEndPoint: string,
+  organization: CfOrganizationEntity,
+  token: string
+) {
+  const headers = {
+    Authorization: `bearer ${token}`,
+    Accept: "application/json"
+  }
+  const searchParams = { "order-by": "name", "order-direction": "asc" }
+  const resp = await got(`${cfEndPoint}${organization.spaces_url}`, {
+    headers,
+    searchParams
+  })
+  const orgRes = JSON.parse(resp.body)
+  if (
+    !isCfResult(orgRes) ||
+    !orgRes.resources.every(r => isCfSpaceEntity(r.entity))
+  )
+    throw new Error("Unexpected response format for Spaces")
+  return orgRes.resources as CfResource<CfSpaceEntity>[]
+}
 export function cfPasswordGrant(url: string, user: string, password: string) {
   const oa = new ClientOAuth2({ accessTokenUri: `${url}/oauth/token` })
   return oa.owner.getToken(user, password as string, {
