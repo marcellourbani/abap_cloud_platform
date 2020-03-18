@@ -1,3 +1,4 @@
+import { isAbapServiceKey, isAbapEntity } from "./index"
 // all these tests use an actual CF account defined in setenv.js, will not run without valid credentials
 import {
   cfPasswordGrant,
@@ -6,7 +7,8 @@ import {
   cfOrganizations,
   cfSpaces,
   cfServices,
-  cfServiceInstances
+  cfServiceInstances,
+  cfInstanceServiceKey
 } from "."
 
 const getenv = () => {
@@ -23,7 +25,30 @@ const getCfAccessToken = async () => {
   const token = await cfPasswordGrant(login!, CFUSER, CFPASSWORD)
   return token.accessToken
 }
+const getServiceInstances = async () => {
+  const { CFENDPOINT } = getenv()
+  const token = await getCfAccessToken()
 
+  const organizations = await cfOrganizations(CFENDPOINT, token)
+  const spaces = await cfSpaces(CFENDPOINT, organizations[0].entity, token)
+  const space = spaces[0]
+  const instances = await cfServiceInstances(CFENDPOINT, space.entity, token)
+  return { instances, token, space }
+}
+
+const getAbapInstance = async () => {
+  const { CFENDPOINT } = getenv()
+  const { instances, token } = await getServiceInstances()
+  const services = await cfServices(CFENDPOINT, token)
+  const service = services.find(
+    s => s.entity.tags && s.entity.tags.find(t => t === "abapcp")
+  )
+  const instance = instances.find(
+    i => i.entity.service_guid === service?.metadata.guid
+  )
+
+  return { instance, token }
+}
 test("cloud foundry endpoint info", async () => {
   const { CFENDPOINT } = getenv()
   const info = await cfInfo(CFENDPOINT)
@@ -82,15 +107,20 @@ test("cf services", async () => {
 })
 
 test("cf instances", async () => {
-  const { CFENDPOINT } = getenv()
-  const token = await getCfAccessToken()
+  const { instances } = await getServiceInstances()
+  expect(instances.length).toBeGreaterThan(0)
+})
 
-  const organizations = await cfOrganizations(CFENDPOINT, token)
-  const spaces = await cfSpaces(CFENDPOINT, organizations[0].entity, token)
-  const instances = await cfServiceInstances(
+test("cf get service key", async () => {
+  const { CFENDPOINT } = getenv()
+  const { instance, token } = await getAbapInstance()
+  if (!instance?.entity) throw "No entity found"
+  const serviceKey = await cfInstanceServiceKey(
     CFENDPOINT,
-    spaces[0].entity,
+    instance?.entity,
+    "SAP_ADT",
     token
   )
-  expect(instances.length).toBeGreaterThan(0)
+
+  expect(isAbapEntity(serviceKey.entity)).toBe(true)
 })

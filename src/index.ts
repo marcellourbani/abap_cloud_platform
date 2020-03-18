@@ -163,6 +163,52 @@ export interface CfServiceInstanceEntity extends CfEntity {
 const isCfServiceInstanceEntity = (x: any): x is CfServiceInstanceEntity =>
   !!(x?.service_guid && x?.service_url && x?.space_guid && x?.name)
 
+export interface AbapServiceKey {
+  uaa: {
+    uaadomain: string
+    tenantmode: string
+    sburl: string
+    clientid: string
+    verificationkey: string
+    apiurl: string
+    xsappname: string
+    identityzone: string
+    identityzoneid: string
+    clientsecret: string
+    tenantid: string
+    url: string
+  }
+  url: string
+  "sap.cloud.service": string
+  systemid: string
+  endpoints: {
+    abap: string
+  }
+  catalogs: {
+    abap: {
+      path: string
+      type: string
+    }
+  }
+  binding: {
+    env: string
+    version: string
+    type: string
+    id: string
+  }
+}
+export const isAbapServiceKey = (x: any): x is AbapServiceKey =>
+  !!(x?.catalogs?.abap && x?.uaa?.url && x.uaa?.clientid && x.uaa?.clientsecret)
+
+export interface AbapEntity extends CfEntity {
+  service_instance_guid: string
+  credentials: AbapServiceKey
+  service_instance_url: string
+  service_key_parameters_url: string
+}
+export const isAbapEntity = (x: any): x is AbapEntity =>
+  isAbapServiceKey(x?.credentials)
+
 //////////////////////////////////////////////////////
 export async function cfInfo(cfEndPoint: string) {
   const headers = { Accept: "application/json" }
@@ -263,6 +309,30 @@ export async function cfServiceInstances(
     throw new Error("Unexpected response format for service instance")
   return orgRes.resources as CfResource<CfServiceInstanceEntity>[]
 }
+
+export async function cfInstanceServiceKey(
+  cfEndPoint: string,
+  instance: CfServiceInstanceEntity,
+  name: string,
+  token: string
+) {
+  const headers = {
+    Authorization: `bearer ${token}`,
+    Accept: "application/json"
+  }
+
+  const resp = await got(`${cfEndPoint}${instance.service_keys_url}`, {
+    headers,
+    searchParams: { q: `name:${name}` }
+  })
+  const keyRes = JSON.parse(resp.body)
+  if (!isCfResult(keyRes))
+    throw new Error("Unexpected response format for instance servicekey")
+  if (keyRes.total_results !== 1 || keyRes.resources.length !== 1)
+    throw new Error("Unexpected response format for instance servicekey")
+  return keyRes.resources[0]
+}
+
 export function cfPasswordGrant(url: string, user: string, password: string) {
   const oa = new ClientOAuth2({ accessTokenUri: `${url}/oauth/token` })
   return oa.owner.getToken(user, password as string, {
