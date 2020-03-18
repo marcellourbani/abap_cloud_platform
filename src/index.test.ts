@@ -4,7 +4,9 @@ import {
   cfInfo,
   cfTokenKeys,
   cfOrganizations,
-  cfSpaces
+  cfSpaces,
+  cfServices,
+  cfServiceInstances
 } from "."
 
 const getenv = () => {
@@ -66,4 +68,29 @@ test("cf Spaces", async () => {
   const spaces = await cfSpaces(CFENDPOINT, organizations[0].entity, token)
   expect(spaces.length).toBeTruthy()
   expect(spaces[0].entity.name).toBeDefined()
+})
+
+test("cf services", async () => {
+  const { CFENDPOINT } = getenv()
+  const token = await getCfAccessToken()
+
+  const services = await cfServices(CFENDPOINT, token)
+  const service = services.find(
+    s => s.entity.tags && s.entity.tags.find(t => t === "abapcp")
+  )
+  expect(service).toBeDefined()
+})
+
+test("cf instances", async () => {
+  const { CFENDPOINT } = getenv()
+  const token = await getCfAccessToken()
+
+  const organizations = await cfOrganizations(CFENDPOINT, token)
+  const spaces = await cfSpaces(CFENDPOINT, organizations[0].entity, token)
+  const instances = await cfServiceInstances(
+    CFENDPOINT,
+    spaces[0].entity,
+    token
+  )
+  expect(instances.length).toBeGreaterThan(0)
 })
