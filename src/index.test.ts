@@ -1,4 +1,9 @@
-import { isAbapServiceKey, isAbapEntity } from "./index"
+import {
+  isAbapServiceKey,
+  isAbapEntity,
+  cfInstanceServiceKeyCreate,
+  cfInstanceServiceKeyDelete
+} from "./index"
 // all these tests use an actual CF account defined in setenv.js, will not run without valid credentials
 import {
   cfPasswordGrant,
@@ -123,4 +128,30 @@ test("cf get service key", async () => {
   )
 
   expect(isAbapEntity(serviceKey.entity)).toBe(true)
+})
+
+test("cf create and delete service key", async () => {
+  const { CFENDPOINT } = getenv()
+  const NAME = "cphelpertest"
+  const { instance, token } = await getAbapInstance()
+  if (!instance) throw "No entity found"
+  let serviceKey
+  try {
+    serviceKey = await cfInstanceServiceKeyCreate(
+      CFENDPOINT,
+      instance,
+      NAME,
+      token
+    )
+  } catch (error) {
+    // creation failed, might be because it exists already
+    serviceKey = await cfInstanceServiceKey(
+      CFENDPOINT,
+      instance.entity,
+      NAME,
+      token
+    )
+  }
+
+  await cfInstanceServiceKeyDelete(CFENDPOINT, serviceKey.metadata.guid, token)
 })

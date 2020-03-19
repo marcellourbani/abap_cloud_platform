@@ -1,5 +1,6 @@
 import ClientOAuth2 from "client-oauth2"
-import got from "got"
+import got, { GotOptions, Options } from "got"
+import { OptionsOfDefaultResponseBody } from "got/dist/source/create"
 interface CfLink {
   href: string
   method?: string
@@ -42,10 +43,18 @@ export interface CfMetadata {
   updated_at: string
   url: string
 }
+const isCfMetadata = <T extends CfEntity>(r: CfMetadata): r is CfMetadata =>
+  !!r?.guid && !!r.created_at && !!r.url
+
 export interface CfResource<T extends CfEntity> {
   metadata: CfMetadata
   entity: T
 }
+
+const isCfResource = <T extends CfEntity>(
+  r: CfResource<T>
+): r is CfResource<T> => !!r?.entity && !isCfMetadata(r?.metadata)
+
 export interface CfResult<T extends CfEntity> {
   total_results: number
   total_pages: number
@@ -163,7 +172,8 @@ export interface CfServiceInstanceEntity extends CfEntity {
 const isCfServiceInstanceEntity = (x: any): x is CfServiceInstanceEntity =>
   !!(x?.service_guid && x?.service_url && x?.space_guid && x?.name)
 
-export interface AbapServiceKey {
+interface ServiceKey {}
+export interface AbapServiceKey extends ServiceKey {
   uaa: {
     uaadomain: string
     tenantmode: string
@@ -331,6 +341,46 @@ export async function cfInstanceServiceKey(
   if (keyRes.total_results !== 1 || keyRes.resources.length !== 1)
     throw new Error("Unexpected response format for instance servicekey")
   return keyRes.resources[0]
+}
+
+export async function cfInstanceServiceKeyCreate<T extends CfEntity>(
+  cfEndPoint: string,
+  instance: CfResource<CfServiceInstanceEntity>,
+  name: string,
+  token: string
+) {
+  const headers = {
+    Authorization: `bearer ${token}`,
+    "Content-Type": "application/json",
+    Accept: "application/json"
+  }
+  const body = JSON.stringify({
+    name,
+    service_instance_guid: instance.metadata.guid
+  })
+  const method = "POST"
+  const o = { headers, body }
+  const resp = await got(`${cfEndPoint}/v2/service_keys`, { method, ...o })
+  const keyRes = JSON.parse(resp.body)
+  if (!isCfResource(keyRes))
+    throw new Error("Unexpected response format for instance servicekey")
+  return keyRes as CfResource<T>
+}
+
+export async function cfInstanceServiceKeyDelete(
+  cfEndPoint: string,
+  guid: string,
+  token: string
+) {
+  const headers = {
+    Authorization: `bearer ${token}`,
+    "Content-Type": "application/json"
+  }
+  const method = "DELETE"
+  await got(`${cfEndPoint}/v2/service_keys/${guid}`, {
+    method,
+    headers
+  })
 }
 
 export function cfPasswordGrant(url: string, user: string, password: string) {
