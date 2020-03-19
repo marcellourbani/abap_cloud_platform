@@ -1,8 +1,11 @@
+import got from "got"
 import {
   isAbapServiceKey,
   isAbapEntity,
   cfInstanceServiceKeyCreate,
-  cfInstanceServiceKeyDelete
+  cfInstanceServiceKeyDelete,
+  cfCodeGrant,
+  loginServer
 } from "./index"
 // all these tests use an actual CF account defined in setenv.js, will not run without valid credentials
 import {
@@ -54,6 +57,14 @@ const getAbapInstance = async () => {
 
   return { instance, token }
 }
+
+const getServiceKey = async (name: string) => {
+  const { CFENDPOINT } = getenv()
+  const { instance, token } = await getAbapInstance()
+  if (!instance?.entity) throw "No entity found"
+  return cfInstanceServiceKey(CFENDPOINT, instance?.entity, name, token)
+}
+
 test("cloud foundry endpoint info", async () => {
   const { CFENDPOINT } = getenv()
   const info = await cfInfo(CFENDPOINT)
@@ -117,16 +128,8 @@ test("cf instances", async () => {
 })
 
 test("cf get service key", async () => {
-  const { CFENDPOINT } = getenv()
-  const { instance, token } = await getAbapInstance()
-  if (!instance?.entity) throw "No entity found"
-  const serviceKey = await cfInstanceServiceKey(
-    CFENDPOINT,
-    instance?.entity,
-    "SAP_ADT",
-    token
-  )
-
+  jest.setTimeout(8000)
+  const serviceKey = await getServiceKey("SAP_ADT")
   expect(isAbapEntity(serviceKey.entity)).toBe(true)
 })
 
@@ -154,4 +157,29 @@ test("cf create and delete service key", async () => {
   }
 
   await cfInstanceServiceKeyDelete(CFENDPOINT, serviceKey.metadata.guid, token)
+})
+
+test("cf code grant", async () => {
+  const start = new Date().getTime()
+  const now = new Date().getTime()
+  if (now - start < 10) return //will not run unless there's a breakpoint set here
+  jest.setTimeout(60000) // 1 minute. This requires browser interaction
+  const key = (await getServiceKey("SAP_ADT"))?.entity
+  if (!isAbapEntity(key)) throw "Not a valid abap key"
+  const { url, clientid, clientsecret } = key.credentials.uaa
+
+  // code token
+  const grant = await cfCodeGrant(url, clientid, clientsecret, loginServer())
+
+  expect(grant.accessToken).toBeDefined()
+  const headers = {
+    Authorization: `bearer ${grant.accessToken}`,
+    Accept: "text/plain"
+  }
+  const resp = await got(
+    `${key.credentials.url}/sap/bc/adt/oo/classes/cx_root/source/main`,
+    { headers }
+  )
+
+  expect(resp.body.match(/class\s+cx_root\s+definition/i)).toBeDefined()
 })

@@ -1,5 +1,5 @@
 {
-  "name": "cloud_platform_helper",
+  "name": "abap_cloud_platform",
   "version": "1.0.0",
   "description": "A handful of cloud foundry API methods",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
   "repository": {
     "type": "git",
     "build": "tsc",
-    "url": "git+https://github.com/marcellourbani/cloud_platform_helper.git"
+    "url": "git+https://github.com/marcellourbani/abap_cloud_platform.git"
   },
   "keywords": [
     "SAP",
@@ -19,9 +19,9 @@
   "author": "Marcello Urbani",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/marcellourbani/cloud_platform_helper/issues"
+    "url": "https://github.com/marcellourbani/abap_cloud_platform/issues"
   },
-  "homepage": "https://github.com/marcellourbani/cloud_platform_helper#readme",
+  "homepage": "https://github.com/marcellourbani/abap_cloud_platform#readme",
   "dependencies": {
     "client-oauth2": "^4.2.5",
     "express": "^4.17.1",

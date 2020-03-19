@@ -418,15 +418,18 @@ export function loginServer(
       res.status(302)
       res.setHeader(
         "Location",
-        `http://localhost:${port}${successPath}?code=${req.query.code}&action=link`
+        `http://localhost:${actualPort}${successPath}?code=${req.query.code}&action=link`
       )
       res.send()
       resolve(req)
     })
-    app.get(successPath, successHandler, () => server.close())
+    app.get(successPath, (req, res, next) => {
+      successHandler(req, res, next)
+      server.close()
+    })
   })
 
-  const redirectUri = `http://localhost:${port}${loginPath}`
+  const redirectUri = `http://localhost:${actualPort}${loginPath}`
 
   return { app, server, callbackRequest, redirectUri }
 }
