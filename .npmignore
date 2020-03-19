@@ -1,0 +1,6 @@
+.vscode
+src
+jest.config.js
+tsconfig.json
+dist/index.test.*
+setenv.js
