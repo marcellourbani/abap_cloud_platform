@@ -1,6 +1,9 @@
 import ClientOAuth2 from "client-oauth2"
-import got, { GotOptions, Options } from "got"
-import { OptionsOfDefaultResponseBody } from "got/dist/source/create"
+import got from "got"
+import express, { Express, RequestHandler, Request } from "express"
+import { Server } from "http"
+import opn from "open"
+
 interface CfLink {
   href: string
   method?: string
@@ -43,7 +46,7 @@ export interface CfMetadata {
   updated_at: string
   url: string
 }
-const isCfMetadata = <T extends CfEntity>(r: CfMetadata): r is CfMetadata =>
+const isCfMetadata = (r: CfMetadata): r is CfMetadata =>
   !!r?.guid && !!r.created_at && !!r.url
 
 export interface CfResource<T extends CfEntity> {
@@ -219,6 +222,14 @@ export interface AbapEntity extends CfEntity {
 export const isAbapEntity = (x: any): x is AbapEntity =>
   isAbapServiceKey(x?.credentials)
 
+interface LoginServer<T> {
+  callbackRequest: Promise<T>
+  redirectUri: string
+}
+interface ExpressLoginServer extends LoginServer<Request> {
+  app: Express
+  server: Server
+}
 //////////////////////////////////////////////////////
 export async function cfInfo(cfEndPoint: string) {
   const headers = { Accept: "application/json" }
@@ -388,4 +399,53 @@ export function cfPasswordGrant(url: string, user: string, password: string) {
   return oa.owner.getToken(user, password as string, {
     headers: { Authorization: "Basic Y2Y6" }
   })
+}
+
+export function loginServer(
+  port = 0,
+  successHandler: RequestHandler = (req, res) =>
+    res.send("Login successful, please close this window")
+): ExpressLoginServer {
+  const loginPath = "/oauth/client/redirect/link"
+  const successPath = "/logon/success"
+  const app = express()
+  const server = app.listen(port)
+  const actualPort = (server.address() as any)?.port
+  if (!actualPort) throw new Error("Failed to start login server")
+
+  const callbackRequest = new Promise<Request>(async resolve => {
+    app.get(loginPath, (req, res) => {
+      res.status(302)
+      res.setHeader(
+        "Location",
+        `http://localhost:${port}${successPath}?code=${req.query.code}&action=link`
+      )
+      res.send()
+      resolve(req)
+    })
+    app.get(successPath, successHandler, () => server.close())
+  })
+
+  const redirectUri = `http://localhost:${port}${loginPath}`
+
+  return { app, server, callbackRequest, redirectUri }
+}
+
+export async function cfCodeGrant<T extends { url: string }>(
+  uaaUrl: string,
+  clientId: string,
+  clientSecret: string,
+  server: LoginServer<T>
+) {
+  const { redirectUri, callbackRequest } = server
+  const oa = new ClientOAuth2({
+    authorizationUri: `${uaaUrl}/oauth/authorize`,
+    accessTokenUri: `${uaaUrl}/oauth/token`,
+    redirectUri,
+    clientId,
+    clientSecret
+  })
+  opn(oa.code.getUri())
+  const url = (await callbackRequest).url
+  return await oa.code.getToken(url)
 }
