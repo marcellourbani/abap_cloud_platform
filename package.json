@@ -1,6 +1,6 @@
 {
   "name": "abap_cloud_platform",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A handful of cloud foundry API methods",
   "main": "dist/index.js",
   "scripts": {
@@ -26,10 +26,10 @@
     "client-oauth2": "^4.2.5",
     "express": "^4.17.1",
     "got": "^10.6.0",
-    "open": "^7.0.3"
+    "open": "^7.0.3",
+    "@types/express": "^4.17.3"
   },
   "devDependencies": {
-    "@types/express": "^4.17.3",
     "@types/jest": "^25.1.4",
     "jest": "^25.1.0",
     "ts-jest": "^25.2.1",
