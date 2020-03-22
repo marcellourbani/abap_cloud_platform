@@ -230,6 +230,30 @@ interface ExpressLoginServer extends LoginServer<Request> {
   app: Express
   server: Server
 }
+
+export interface AbapUserInfo {
+  MANDT: string
+  UNAME: string
+}
+const isAbapUserInfo = (x: any): x is AbapUserInfo => !!x.MANDT && !!x.UNAME
+export interface InstalledLanguage {
+  ISOLANG: string
+  SAPLANG: string
+}
+
+const isInstalledLanguage = (x: any): x is InstalledLanguage =>
+  !!x.ISOLANG && !!x.SAPLANG
+
+export interface AbapSystemInfo {
+  INSTALLED_LANGUAGES: InstalledLanguage[]
+  SYSID: string
+}
+const isAbapSystemInfo = (x: AbapSystemInfo): x is AbapSystemInfo =>
+  !!(
+    x.SYSID &&
+    x.SYSID.match(/^[A-Z][A-Z\d][A-Z\d]$/) &&
+    x.INSTALLED_LANGUAGES.every(isInstalledLanguage)
+  )
 //////////////////////////////////////////////////////
 export async function cfInfo(cfEndPoint: string) {
   const headers = { Accept: "application/json" }
@@ -451,4 +475,31 @@ export async function cfCodeGrant<T extends { url: string }>(
   opn(oa.code.getUri())
   const url = (await callbackRequest).url
   return await oa.code.getToken(url)
+}
+
+export async function getAbapSystemInfo(abapUrl: string, token: string) {
+  const resp = await got(`${abapUrl}/sap/bc/http/sap/a4c_api_session`, {
+    headers: {
+      Authorization: `bearer ${token}`,
+      Accept: "application/json"
+    },
+    searchParams: { q: "systeminfo" }
+  })
+  const systemInfo = JSON.parse(resp.body)
+  if (!isAbapSystemInfo(systemInfo))
+    throw new Error("Invalid system info record")
+  return systemInfo
+}
+
+export async function getAbapUserInfo(abapUrl: string, token: string) {
+  const resp = await got(`${abapUrl}/sap/bc/http/sap/a4c_api_session`, {
+    headers: {
+      Authorization: `bearer ${token}`,
+      Accept: "application/json"
+    },
+    searchParams: { q: "userinfo" }
+  })
+  const userInfo = JSON.parse(resp.body)
+  if (!isAbapUserInfo(userInfo)) throw new Error("Invalid user info record")
+  return userInfo
 }

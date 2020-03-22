@@ -5,7 +5,9 @@ import {
   cfInstanceServiceKeyCreate,
   cfInstanceServiceKeyDelete,
   cfCodeGrant,
-  loginServer
+  loginServer,
+  getAbapUserInfo,
+  getAbapSystemInfo
 } from "./index"
 // all these tests use an actual CF account defined in setenv.js, will not run without valid credentials
 import {
@@ -159,7 +161,7 @@ test("cf create and delete service key", async () => {
   await cfInstanceServiceKeyDelete(CFENDPOINT, serviceKey.metadata.guid, token)
 })
 
-test("cf code grant", async () => {
+test("cf code grant and abap server details", async () => {
   const start = new Date().getTime()
   const now = new Date().getTime()
   if (now - start < 10) return //will not run unless there's a breakpoint set here
@@ -172,6 +174,12 @@ test("cf code grant", async () => {
   const grant = await cfCodeGrant(url, clientid, clientsecret, loginServer())
 
   expect(grant.accessToken).toBeDefined()
+
+  const userInfo = await getAbapUserInfo(key.credentials.url, grant.accessToken)
+  expect(userInfo.UNAME).toBeDefined()
+
+  const info = await getAbapSystemInfo(key.credentials.url, grant.accessToken)
+  expect(info.SYSID).toMatch(/[A-Z]\w\w/)
   const headers = {
     Authorization: `bearer ${grant.accessToken}`,
     Accept: "text/plain"

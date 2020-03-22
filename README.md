@@ -65,3 +65,13 @@ const resp = await got(
   { headers }
 )
 ```
+
+Get system details based on the given token
+
+```typescript
+const user = await getAbapUserInfo(key.credentials.url, codeGrant.accessToken)
+console.log(user.UNAME)
+
+const info = await getAbapSystemInfo(key.credentials.url, codeGrant.accessToken)
+console.log(info.SYSID)
+```
