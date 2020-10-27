@@ -38,11 +38,17 @@ const abapService = services.find(s => findAbapTag(s.entity.tags))
 const abapServiceInstance = instances.find(
   i => i.entity.service_guid === abapService?.metadata.guid
 )
-
-abapServiceKey = await cfInstanceServiceKey(
+// list of all keys
+const abapServiceKeys = await cfInstanceServiceKeys(
   CFENDPOINT,
   abapServiceInstance.entity,
-  "SAP_ADT", // the one Eclipse usually creates
+  token
+)
+// a single key named SAP_ADT, usually used by Exlipse
+const abapServiceKey = await cfInstanceServiceKey(
+  CFENDPOINT,
+  abapServiceInstance.entity,
+  "SAP_ADT",
   token
 )
 ```

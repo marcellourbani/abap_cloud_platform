@@ -7,7 +7,8 @@ import {
   cfCodeGrant,
   loginServer,
   getAbapUserInfo,
-  getAbapSystemInfo
+  getAbapSystemInfo,
+  cfInstanceServiceKeys
 } from "./index"
 // all these tests use an actual CF account defined in setenv.js, will not run without valid credentials
 import {
@@ -22,9 +23,9 @@ import {
 } from "."
 
 const getenv = () => {
-  const { CFUSER, CFPASSWORD, CFENDPOINT } = process.env
+  const { CFUSER, CFPASSWORD, CFENDPOINT, ORGNAME } = process.env
   if (!(CFUSER && CFPASSWORD && CFENDPOINT)) throw "Environment not set"
-  return { CFUSER, CFPASSWORD, CFENDPOINT }
+  return { CFUSER, CFPASSWORD, CFENDPOINT, ORGNAME }
 }
 
 const getCfAccessToken = async () => {
@@ -36,11 +37,13 @@ const getCfAccessToken = async () => {
   return token.accessToken
 }
 const getServiceInstances = async () => {
-  const { CFENDPOINT } = getenv()
+  const { CFENDPOINT, ORGNAME } = getenv()
   const token = await getCfAccessToken()
 
   const organizations = await cfOrganizations(CFENDPOINT, token)
-  const spaces = await cfSpaces(CFENDPOINT, organizations[0].entity, token)
+  const myorg =
+    organizations.find(o => o.entity.name === ORGNAME) || organizations[0]
+  const spaces = await cfSpaces(CFENDPOINT, myorg.entity, token)
   const space = spaces[0]
   const instances = await cfServiceInstances(CFENDPOINT, space.entity, token)
   return { instances, token, space }
@@ -65,6 +68,13 @@ const getServiceKey = async (name: string) => {
   const { instance, token } = await getAbapInstance()
   if (!instance?.entity) throw "No entity found"
   return cfInstanceServiceKey(CFENDPOINT, instance?.entity, name, token)
+}
+
+const getServiceKeys = async () => {
+  const { CFENDPOINT } = getenv()
+  const { instance, token } = await getAbapInstance()
+  if (!instance?.entity) throw "No entity found"
+  return cfInstanceServiceKeys(CFENDPOINT, instance?.entity, token)
 }
 
 test("cloud foundry endpoint info", async () => {
@@ -133,6 +143,13 @@ test("cf get service key", async () => {
   jest.setTimeout(8000)
   const serviceKey = await getServiceKey("SAP_ADT")
   expect(isAbapEntity(serviceKey.entity)).toBe(true)
+})
+
+test("cf get service keys", async () => {
+  jest.setTimeout(8000)
+  const serviceKeys = await getServiceKeys()
+  expect(Array.isArray(serviceKeys)).toBeTruthy()
+  expect(isAbapEntity(serviceKeys[0]?.entity)).toBe(true)
 })
 
 test("cf create and delete service key", async () => {

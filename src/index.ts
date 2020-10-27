@@ -39,7 +39,7 @@ export interface UaaTokenKeys {
 const isUaaTokenKeys = (x: UaaTokenKeys): x is UaaTokenKeys =>
   !!(x?.kid && x?.value && x?.alg && x?.kty)
 
-export interface CfEntity {}
+export interface CfEntity { }
 export interface CfMetadata {
   created_at: string
   guid: string
@@ -175,7 +175,7 @@ export interface CfServiceInstanceEntity extends CfEntity {
 const isCfServiceInstanceEntity = (x: any): x is CfServiceInstanceEntity =>
   !!(x?.service_guid && x?.service_url && x?.space_guid && x?.name)
 
-interface ServiceKey {}
+interface ServiceKey { }
 export interface AbapServiceKey extends ServiceKey {
   uaa: {
     uaadomain: string
@@ -354,6 +354,24 @@ export async function cfServiceInstances(
     throw new Error("Unexpected response format for service instance")
   return orgRes.resources as CfResource<CfServiceInstanceEntity>[]
 }
+
+export async function cfInstanceServiceKeys(
+  cfEndPoint: string,
+  instance: CfServiceInstanceEntity,
+  token: string
+) {
+  const headers = {
+    Authorization: `bearer ${token}`,
+    Accept: "application/json"
+  }
+
+  const resp = await got(`${cfEndPoint}${instance.service_keys_url}`, { headers })
+  const keyRes = JSON.parse(resp.body)
+  if (!isCfResult(keyRes))
+    throw new Error("Unexpected response format for instance servicekey")
+  return keyRes.resources
+}
+
 
 export async function cfInstanceServiceKey(
   cfEndPoint: string,
