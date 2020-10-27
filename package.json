@@ -4,11 +4,12 @@
   "description": "A handful of cloud foundry API methods",
   "main": "dist/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc",
+    "prepack": "npm run build"
   },
   "repository": {
     "type": "git",
-    "build": "tsc",
     "url": "git+https://github.com/marcellourbani/abap_cloud_platform.git"
   },
   "keywords": [
