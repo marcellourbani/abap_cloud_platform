@@ -56,7 +56,7 @@ export interface CfResource<T extends CfEntity> {
 
 const isCfResource = <T extends CfEntity>(
   r: CfResource<T>
-): r is CfResource<T> => !!r?.entity && !isCfMetadata(r?.metadata)
+): r is CfResource<T> => !!r?.entity && !!isCfMetadata(r?.metadata)
 
 export interface CfResult<T extends CfEntity> {
   total_results: number
