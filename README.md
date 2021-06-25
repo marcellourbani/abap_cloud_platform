@@ -29,7 +29,7 @@ const instances = await cfServiceInstances(CFENDPOINT, spaces[0].entity, token)
 const services = await cfServices(CFENDPOINT, token)
 ```
 
-...nad then get the ABAP service key
+...and then get the ABAP service key
 
 ```typescript
 // now I want the ABAP service key, so let's find the right service instance
