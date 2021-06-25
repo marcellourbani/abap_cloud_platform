@@ -1,6 +1,6 @@
 # Abap cloud platform
 
-The minimum cloud foundry/SAP cloud platform APIs required to access an APAP repository. Might be useful for other cloud foundry services
+The minimum cloud foundry/SAP cloud platform APIs required to access an ABAP repository. Might be useful for other cloud foundry services
 
 ## Usage example
 
