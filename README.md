@@ -44,7 +44,7 @@ const abapServiceKeys = await cfInstanceServiceKeys(
   abapServiceInstance.entity,
   token
 )
-// a single key named SAP_ADT, usually used by Exlipse
+// a single key named SAP_ADT, usually used by Eclipse
 const abapServiceKey = await cfInstanceServiceKey(
   CFENDPOINT,
   abapServiceInstance.entity,
