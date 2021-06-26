@@ -1,6 +1,6 @@
 # Abap cloud platform
 
-The minimum cloud foundry/SAP cloud platform APIs required to access an APAP repository. Might be useful for other cloud foundry services
+The minimum cloud foundry/SAP cloud platform APIs required to access an ABAP repository. Might be useful for other cloud foundry services
 
 ## Usage example
 
@@ -29,7 +29,7 @@ const instances = await cfServiceInstances(CFENDPOINT, spaces[0].entity, token)
 const services = await cfServices(CFENDPOINT, token)
 ```
 
-...nad then get the ABAP service key
+...and then get the ABAP service key
 
 ```typescript
 // now I want the ABAP service key, so let's find the right service instance
@@ -44,7 +44,7 @@ const abapServiceKeys = await cfInstanceServiceKeys(
   abapServiceInstance.entity,
   token
 )
-// a single key named SAP_ADT, usually used by Exlipse
+// a single key named SAP_ADT, usually used by Eclipse
 const abapServiceKey = await cfInstanceServiceKey(
   CFENDPOINT,
   abapServiceInstance.entity,
