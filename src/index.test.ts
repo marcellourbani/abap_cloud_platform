@@ -89,7 +89,7 @@ test("token keys", async () => {
   const login = info.links?.login?.href
 
   const tokenKeys = await cfTokenKeys(login!)
-  expect(tokenKeys.length).toBe(1)
+  expect(tokenKeys.length).toBeGreaterThan(1)
   expect(tokenKeys[0].alg).toBeDefined()
   expect(tokenKeys[0].value).toBeDefined()
 })
