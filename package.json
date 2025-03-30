@@ -1,6 +1,6 @@
 {
   "name": "abap_cloud_platform",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "A handful of cloud foundry API methods",
   "main": "dist/index.js",
   "scripts": {
